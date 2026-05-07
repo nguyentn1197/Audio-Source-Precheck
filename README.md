@@ -2,6 +2,10 @@
 
 A Windows desktop application to organize music downloads from Torrent and Soulseek (SLSK) sources.
 
+> [!CAUTION]
+> This solution is entirely vibe coded. use at your own risk
+
+
 ## Workflow
 
 ```
