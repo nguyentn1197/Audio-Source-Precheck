@@ -1,0 +1,27 @@
+# Core UI
+PySide6>=6.7
+
+# Audio metadata
+mutagen>=1.47
+
+# MusicBrainz API
+musicbrainzngs>=0.7.1
+
+# Audio analysis / spectrum
+numpy>=1.26
+scipy>=1.13
+soundfile>=0.12
+librosa>=0.10
+
+# Spectrum chart widget
+matplotlib>=3.9
+
+# Archive extraction (RAR, 7z, tar — ZIP handled by stdlib)
+rarfile>=4.1
+py7zr>=0.21
+
+# Dev / test (install with: pip install -r requirements-dev.txt)
+# pytest>=8.0
+# pytest-qt>=4.4
+# ruff>=0.4
+# mypy>=1.10

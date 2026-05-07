@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "musicflow"
+version = "0.1.0"
+description = "Music download organizer: ingest, deduplicate, fake hi-res detection, and stage for tagging"
+requires-python = ">=3.11"
+readme = "README.md"
+license = { text = "MIT" }
+
+dependencies = [
+    "PySide6>=6.7",
+    "mutagen>=1.47",
+    "musicbrainzngs>=0.7.1",
+    "numpy>=1.26",
+    "scipy>=1.13",
+    "soundfile>=0.12",
+    "librosa>=0.10",
+    "matplotlib>=3.9",
+    "rarfile>=4.1",
+    "py7zr>=0.21",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-qt>=4.4",
+    "ruff>=0.4",
+    "mypy>=1.10",
+]
+
+[project.scripts]
+musicflow = "musicflow.main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["musicflow*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]

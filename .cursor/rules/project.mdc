@@ -1,0 +1,48 @@
+---
+description: MusicFlow project rules for Cursor AI
+globs: ["**/*.py"]
+alwaysApply: true
+---
+
+# MusicFlow — Cursor Agent Rules
+
+## Key Invariants
+
+- **Never delete Torrent source files** — Torrent source files must only be *copied* to Staging 1. Originals must remain untouched for seeding.
+- **Soulseek files are moved** (not copied) — originals deleted after successful move.
+- **All destructive file operations** must go through `musicflow/utils/file_utils.py`. Never use raw `os.remove` or `shutil.move` in business logic.
+- **Never block the Qt main thread** — all I/O, analysis, and network calls run in `QThread` workers.
+- **MusicBrainz rate limit** — max 1 req/sec. Always use `core/musicbrainz.py`; never import `musicbrainzngs` directly elsewhere.
+
+## Architecture Rules
+
+- Core logic (`musicflow/core/`) — pure Python, **no Qt imports**.
+- Workers (`*Worker(QThread)`) live in the same file as the core logic they wrap.
+- UI code (`musicflow/ui/`) — only imports from `core/` and `config.py`.
+- Tests in `tests/` for all core logic.
+
+## Coding Conventions
+
+- Python 3.11+ — use `match`/`case`, `StrEnum` where appropriate.
+- Full type hints on all public functions.
+- Dataclasses for DTOs (`TrackMetadata`, `StagedItem`, `DuplicateGroup`).
+- No global mutable state.
+- Logging via `logging_utils.get_logger(__name__)` — never `print()`.
+- Line length: 100 chars (ruff enforced).
+- Import order: stdlib → third-party → local.
+
+## Commands
+
+```powershell
+# Run
+python -m musicflow.main
+
+# Test
+pytest
+
+# Lint
+ruff check musicflow tests
+
+# Type check
+mypy musicflow
+```
