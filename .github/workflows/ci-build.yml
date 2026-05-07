@@ -45,7 +45,7 @@ jobs:
           python -m pip install . pyinstaller
 
       - name: Build executable
-        run: python -m PyInstaller --noconfirm --clean musicflow.spec
+        run: python -m PyInstaller --noconfirm --clean ${{ github.workspace }}\musicflow.spec
 
       - name: Upload executable artifact
         uses: actions/upload-artifact@v4
