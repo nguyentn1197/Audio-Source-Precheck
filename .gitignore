@@ -54,6 +54,3 @@ appdata/
 htmlcov/
 .coverage
 coverage.xml
-
-# Distribution
-*.spec
