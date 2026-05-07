@@ -5,7 +5,7 @@ from pathlib import Path
 from PyInstaller.utils.hooks import collect_all
 
 
-project_root = Path(__file__).resolve().parent
+project_root = Path.cwd()
 datas = []
 binaries = []
 hiddenimports = []
