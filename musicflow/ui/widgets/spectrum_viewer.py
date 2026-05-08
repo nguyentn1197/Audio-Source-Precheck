@@ -6,8 +6,8 @@ from io import BytesIO
 
 import numpy as np
 from matplotlib.figure import Figure
-from PySide6.QtCore import QThread, Qt, Signal
-from PySide6.QtGui import QPixmap
+from PySide6.QtCore import QEvent, QThread, Qt, Signal
+from PySide6.QtGui import QPixmap, QWheelEvent
 from PySide6.QtWidgets import QLabel, QSizePolicy, QVBoxLayout, QWidget
 
 from musicflow.core.fake_hires import SpectrumResult
@@ -78,7 +78,11 @@ class SpectrumViewer(QWidget):
         super().__init__(parent)
         self._current_result: SpectrumResult | None = None
         self._render_worker: _SpectrumRenderWorker | None = None
+        self._original_pixmap: QPixmap | None = None
+        self._zoom_scale: float = 1.0
         self._setup_ui()
+        self._label.installEventFilter(self)
+        self.setFocusPolicy(Qt.FocusPolicy.WheelFocus)
 
     def _setup_ui(self) -> None:
         layout = QVBoxLayout(self)
@@ -97,6 +101,8 @@ class SpectrumViewer(QWidget):
         self._render_worker = None
         self._label.setText("Select a file to view its spectrum")
         self._label.setPixmap(QPixmap())
+        self._original_pixmap = None
+        self._zoom_scale = 1.0
 
     def show_result(self, result: SpectrumResult) -> None:
         self._current_result = result
@@ -114,9 +120,31 @@ class SpectrumViewer(QWidget):
             return
         if self._current_result is None:
             return
-        scaled = pixmap.scaled(
-            self._label.size(),
+        self._original_pixmap = pixmap
+        self._zoom_scale = 1.0
+        self._apply_zoom()
+
+    def _apply_zoom(self) -> None:
+        if self._original_pixmap is None or self._original_pixmap.isNull():
+            return
+        target_w = int(self._original_pixmap.width() * self._zoom_scale)
+        target_h = int(self._original_pixmap.height() * self._zoom_scale)
+        target_w = max(target_w, self._original_pixmap.width() // 5)
+        target_h = max(target_h, self._original_pixmap.height() // 5)
+        scaled = self._original_pixmap.scaled(
+            target_w,
+            target_h,
             Qt.AspectRatioMode.KeepAspectRatio,
             Qt.TransformationMode.SmoothTransformation,
         )
         self._label.setPixmap(scaled)
+
+    def eventFilter(self, obj: object, event: object) -> bool:
+        if obj is self._label and isinstance(event, QWheelEvent):
+            if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+                delta = event.angleDelta().y()
+                factor = 1.15 if delta > 0 else (1 / 1.15)
+                self._zoom_scale = max(0.2, min(5.0, self._zoom_scale * factor))
+                self._apply_zoom()
+                return True
+        return super().eventFilter(obj, event)
