@@ -22,7 +22,7 @@ class _SpectrumRenderWorker(QThread):
         self._size = size
 
     def run(self) -> None:
-        fig = Figure(figsize=(max(self._size[0], 1) / 150.0, max(self._size[1], 1) / 150.0), dpi=150)
+        fig = Figure(figsize=(max(self._size[0], 1) / 200.0, max(self._size[1], 1) / 200.0), dpi=200)
         fig.patch.set_facecolor("#1e1e2e")
         ax = fig.add_subplot(111)
         ax.set_facecolor("#1e1e2e")
@@ -102,7 +102,7 @@ class SpectrumViewer(QWidget):
         self._current_result = result
         if self._render_worker is not None and self._render_worker.isRunning():
             self._render_worker.requestInterruption()
-        size = (1400, 700)
+        size = (2000, 1000)
         worker = _SpectrumRenderWorker(result, size, self)
         worker.rendered.connect(self._on_rendered)
         self._render_worker = worker
