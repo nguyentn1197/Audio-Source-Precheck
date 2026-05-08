@@ -163,7 +163,7 @@ def _analyze(
 
     from scipy.signal import stft as scipy_stft  # noqa: PLC0415
 
-    nperseg_stft = min(n_samples, 1024)
+    nperseg_stft = min(n_samples, 768)
     stft_freqs, stft_times, Zxx = scipy_stft(
         samples, fs=sample_rate, nperseg=nperseg_stft, noverlap=nperseg_stft // 2
     )

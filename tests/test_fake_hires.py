@@ -126,3 +126,14 @@ def test_confidence_is_higher_for_more_obvious_fake(tmp_path: Path) -> None:
 
     if result_obvious.is_suspect and result_borderline.is_suspect:
         assert result_obvious.confidence >= result_borderline.confidence
+
+
+def test_spectrogram_has_nonzero_shape(tmp_path: Path) -> None:
+    wav = tmp_path / "shape_test.wav"
+    _write_wav(wav, sample_rate=44100, duration=3.0, freq_hz=1000)
+    result = analyze_file(wav)
+    assert result.spectrogram_db.ndim == 2
+    assert result.spectrogram_db.shape[0] > 0  # freq bins
+    assert result.spectrogram_db.shape[1] > 0  # time frames
+    # With nperseg=768, freq bins = 385 (768//2 + 1)
+    assert result.spectrogram_db.shape[0] == 385
