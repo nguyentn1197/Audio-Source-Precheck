@@ -94,7 +94,7 @@ class LibraryPanel(QWidget):
         left_layout.addWidget(self._tree)
 
         btn_row = QHBoxLayout()
-        self._export_btn = QPushButton("Export selected to Staging 2")
+        self._export_btn = QPushButton("Move selected to Staging 2")
         self._export_btn.clicked.connect(self._on_export)
         self._load_btn = QPushButton("Load from Staging 1")
         self._load_btn.clicked.connect(self._on_load_from_staging)
@@ -459,7 +459,7 @@ class LibraryPanel(QWidget):
             tracks, staging2, self._config.companion_extensions
         )
         self._status_label.setText(
-            f"Exported {result.success_count} file(s). Errors: {result.error_count}"
+            f"Moved {result.success_count} file(s) to Staging 2. Errors: {result.error_count}"
         )
         self.export_completed.emit(result)
 
