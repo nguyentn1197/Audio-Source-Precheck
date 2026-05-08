@@ -54,3 +54,4 @@ appdata/
 htmlcov/
 .coverage
 coverage.xml
+.opencode/plans/
