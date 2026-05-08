@@ -31,8 +31,7 @@ from musicflow.core.ingest import (
 )
 from musicflow.core.metadata import TrackMetadata
 from musicflow.ui.widgets.spectrum_viewer import SpectrumViewer
-from musicflow.utils.file_utils import fmt_size
-from musicflow.utils.file_utils import open_in_explorer
+from musicflow.utils.file_utils import fmt_size, open_in_explorer, safe_delete
 
 if TYPE_CHECKING:
     from musicflow.config import AppConfig
@@ -96,10 +95,13 @@ class LibraryPanel(QWidget):
         btn_row = QHBoxLayout()
         self._export_btn = QPushButton("Move selected to Staging 2")
         self._export_btn.clicked.connect(self._on_export)
+        self._delete_btn = QPushButton("Delete selected file(s)")
+        self._delete_btn.clicked.connect(self._on_delete_selected)
         self._load_btn = QPushButton("Load from Staging 1")
         self._load_btn.clicked.connect(self._on_load_from_staging)
         self._status_label = QLabel("")
         btn_row.addWidget(self._export_btn)
+        btn_row.addWidget(self._delete_btn)
         btn_row.addWidget(self._load_btn)
         btn_row.addWidget(self._status_label)
         btn_row.addStretch()
@@ -463,6 +465,46 @@ class LibraryPanel(QWidget):
         )
         self.export_completed.emit(result)
 
+    def _on_delete_selected(self) -> None:
+        selected_paths = self._collect_checked_paths()
+        if not selected_paths:
+            self._status_label.setText("No files selected.")
+            return
+
+        # Show full paths so user knows exactly what will be deleted
+        path_list = "\n".join(str(p) for p in selected_paths[:10])
+        if len(selected_paths) > 10:
+            path_list += f"\n… and {len(selected_paths) - 10} more"
+        reply = QMessageBox.question(
+            self,
+            "Confirm Permanent Delete",
+            f"Permanently delete {len(selected_paths)} file(s) from disk?\n"
+            f"This cannot be undone.\n\n{path_list}",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        deleted = 0
+        errors = 0
+        for path in selected_paths:
+            try:
+                safe_delete(path)
+                # Also remove the spectrum cache NPZ to prevent stale data on re-ingest
+                npz_path = path.with_stem(path.stem + ".spectrum").with_suffix(".npz")
+                if npz_path.exists():
+                    safe_delete(npz_path)
+                self._remove_file_row(path)
+                deleted += 1
+            except Exception as exc:
+                logger.error("Delete failed for %s: %s", path, exc)
+                errors += 1
+
+        self._status_label.setText(
+            f"Deleted {deleted} file(s). Errors: {errors}"
+        )
+
     def _collect_checked_paths(self) -> list[Path]:
         paths: list[Path] = []
         for artist_idx in range(self._tree.topLevelItemCount()):
@@ -483,3 +525,37 @@ class LibraryPanel(QWidget):
                             if isinstance(p, Path):
                                 paths.append(p)
         return paths
+
+    def _remove_file_row(self, path: Path) -> None:
+        """Remove the tree row for *path* and clean up caches."""
+        row = self._file_row_cache.pop(path, None)
+        if row is None:
+            return
+        self._spectrum_cache.pop(path, None)
+        self._meta_cache.pop(path, None)
+
+        song_item = row.parent()
+        if song_item is None:
+            return
+        song_item.removeChild(row)
+
+        # Update song badge count
+        title_data: str = song_item.data(0, Qt.ItemDataRole.UserRole + 1) or ""
+        count = song_item.childCount()
+        if count > 0:
+            song_item.setText(0, f"{title_data}  [{count}]")
+        else:
+            # Remove empty song node
+            album_item = song_item.parent()
+            if album_item is not None:
+                album_item.removeChild(song_item)
+                # Remove empty album node
+                if album_item.childCount() == 0:
+                    artist_item = album_item.parent()
+                    if artist_item is not None:
+                        artist_item.removeChild(album_item)
+                        # Remove empty artist node
+                        if artist_item.childCount() == 0:
+                            idx = self._tree.indexOfTopLevelItem(artist_item)
+                            if idx >= 0:
+                                self._tree.takeTopLevelItem(idx)
