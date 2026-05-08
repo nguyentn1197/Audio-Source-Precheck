@@ -55,3 +55,4 @@ htmlcov/
 .coverage
 coverage.xml
 .opencode/plans/
+tmp_test/
